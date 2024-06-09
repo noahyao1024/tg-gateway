@@ -29,7 +29,7 @@ func init() {
 	systemBotKey = os.Getenv("BOT_KEY")
 	systemTTSKey = os.Getenv("TTS_KEY")
 	allowedUsers = make(map[string]byte)
-	systemPath = "/Users/noah/repos/tg-gateway"
+	systemPath = "."
 
 	for _, u := range strings.Split(os.Getenv("ALLOWED_USERS"), ",") {
 		allowedUsers[u] = '1'
@@ -69,12 +69,18 @@ func main() {
 		ttsID := fmt.Sprintf("%x", md5.Sum([]byte(up.Message.Text)))
 		filePath := fmt.Sprintf("%s/%s.mpga", systemPath, ttsID)
 
-		ttsBody, ttsError := azure_tts.TTS(systemTTSKey, up.Message.Text)
-		if ttsError != nil {
-			c.JSON(http.StatusOK, gin.H{
-				"tts_error": ttsError,
-			})
-			return
+		ttsBody, _ := os.ReadFile(filePath)
+		if len(ttsBody) == 0 {
+			var ttsError error
+			ttsBody, ttsError = azure_tts.TTS(systemTTSKey, up.Message.Text)
+			if ttsError != nil {
+				c.JSON(http.StatusOK, gin.H{
+					"tts_error": ttsError,
+				})
+				return
+			}
+		} else {
+			fmt.Println("hit cache", filePath)
 		}
 
 		fmt.Printf("path [%s] len [%d]\n", filePath, len(ttsBody))

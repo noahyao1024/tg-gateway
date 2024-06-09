@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"tg-gateway/api/tg_wrapper"
 	"tg-gateway/model"
 
 	"github.com/gin-gonic/gin"
@@ -15,11 +16,13 @@ import (
 
 var (
 	systemSecret string
+	systemBotKey string
 	allowedUsers map[string]byte
 )
 
 func init() {
 	systemSecret = os.Getenv("SECRET")
+	systemBotKey = os.Getenv("BOT_KEY")
 	allowedUsers = make(map[string]byte)
 
 	for _, u := range strings.Split(os.Getenv("ALLOWED_USERS"), ",") {
@@ -57,9 +60,18 @@ func main() {
 			return
 		}
 
+		tg := tg_wrapper.New(systemBotKey)
+		svBodyRaw, svErr := tg.SendVoice(&tg_wrapper.SendVoiceOption{
+			ChatID:   up.Message.From.ID,
+			FileName: "/Users/noah/Downloads/response.mpga",
+		})
+
+		svBody := make(map[string]interface{})
+		json.Unmarshal([]byte(svBodyRaw), &svBody)
+
 		c.JSON(http.StatusOK, gin.H{
-			"pong":    string(bytes),
-			"pong_up": up,
+			"send_voice_err":  svErr,
+			"send_voice_body": svBody,
 		})
 	})
 

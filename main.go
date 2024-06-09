@@ -29,7 +29,7 @@ func init() {
 	systemBotKey = os.Getenv("BOT_KEY")
 	systemTTSKey = os.Getenv("TTS_KEY")
 	allowedUsers = make(map[string]byte)
-	systemPath = "."
+	systemPath = "./mpgas"
 
 	for _, u := range strings.Split(os.Getenv("ALLOWED_USERS"), ",") {
 		allowedUsers[u] = '1'

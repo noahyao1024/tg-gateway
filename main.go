@@ -67,7 +67,7 @@ func main() {
 		})
 
 		if svErr != nil {
-			fmt.Println("send voice error", svErr)
+			fmt.Printf("send voice error [%+v]\n", svErr)
 		}
 
 		svBody := make(map[string]interface{})

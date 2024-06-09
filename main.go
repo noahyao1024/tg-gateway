@@ -6,15 +6,25 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strings"
 	"tg-gateway/model"
 
 	"github.com/gin-gonic/gin"
+	_ "github.com/joho/godotenv/autoload"
 )
 
-var systemSecret string
+var (
+	systemSecret string
+	allowedUsers map[string]byte
+)
 
 func init() {
-	systemSecret, _ = os.LookupEnv("SECRET")
+	systemSecret = os.Getenv("SECRET")
+	allowedUsers = make(map[string]byte)
+
+	for _, u := range strings.Split(os.Getenv("ALLOWED_USERS"), ",") {
+		allowedUsers[u] = '1'
+	}
 }
 
 func main() {
@@ -35,10 +45,17 @@ func main() {
 
 	r.POST("/receivingUpdates", func(c *gin.Context) {
 		bytes, _ := io.ReadAll(c.Request.Body)
-		fmt.Println(string(bytes))
-
 		up := &model.Update{}
 		json.Unmarshal(bytes, up)
+
+		fmt.Printf("%+v\n", up)
+
+		if allowedUsers[up.Message.From.Username] != '1' {
+			c.JSON(http.StatusForbidden, gin.H{
+				"message": fmt.Sprintf("invalid user [%+v]", up.Message.From),
+			})
+			return
+		}
 
 		c.JSON(http.StatusOK, gin.H{
 			"pong":    string(bytes),

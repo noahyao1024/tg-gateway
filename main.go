@@ -66,6 +66,10 @@ func main() {
 			FileName: "/Users/noah/Downloads/response.mpga",
 		})
 
+		if svErr != nil {
+			fmt.Println("send voice error", svErr)
+		}
+
 		svBody := make(map[string]interface{})
 		json.Unmarshal([]byte(svBodyRaw), &svBody)
 

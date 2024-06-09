@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"tg-gateway/api/azure_tts"
 	"tg-gateway/api/tg_wrapper"
@@ -17,11 +18,12 @@ import (
 )
 
 var (
-	systemPath   string
-	systemSecret string
-	systemBotKey string
-	systemTTSKey string
-	allowedUsers map[string]byte
+	systemPath     string
+	systemSecret   string
+	systemBotKey   string
+	systemTTSKey   string
+	allowedUsers   map[string]byte
+	allowedUserIDs map[int64]byte
 )
 
 func init() {
@@ -29,10 +31,21 @@ func init() {
 	systemBotKey = os.Getenv("BOT_KEY")
 	systemTTSKey = os.Getenv("TTS_KEY")
 	allowedUsers = make(map[string]byte)
+	allowedUserIDs = make(map[int64]byte)
 	systemPath = "./mpgas"
 
 	for _, u := range strings.Split(os.Getenv("ALLOWED_USERS"), ",") {
 		allowedUsers[u] = '1'
+	}
+
+	for _, u := range strings.Split(os.Getenv("ALLOWED_USER_IDS"), ",") {
+		uu, _ := strconv.ParseInt(u, 10, 64)
+		if uu == 0 {
+			fmt.Println("invalid user_id")
+			continue
+		}
+
+		allowedUserIDs[uu] = '1'
 	}
 }
 
@@ -47,7 +60,7 @@ func main() {
 		}
 
 		c.Abort()
-		c.JSON(http.StatusForbidden, gin.H{
+		c.JSON(http.StatusOK, gin.H{
 			"message": "invalid secret",
 		})
 	})
@@ -59,8 +72,8 @@ func main() {
 
 		fmt.Printf("%+v\n", up)
 
-		if allowedUsers[up.Message.From.Username] != '1' {
-			c.JSON(http.StatusForbidden, gin.H{
+		if allowedUsers[up.Message.From.Username] != '1' && allowedUserIDs[up.Message.From.ID] != '1' {
+			c.JSON(http.StatusOK, gin.H{
 				"message": fmt.Sprintf("invalid user [%+v]", up.Message.From),
 			})
 			return
